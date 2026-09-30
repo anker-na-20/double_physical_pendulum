@@ -1,0 +1,64 @@
+<mujoco model="double_inverted_pendulum">
+    <compiler coordinate="local" inertiafromgeom="true"/>
+    
+    <!-- 1. ФИЗИЧЕСКИЕ НАСТРОЙКИ СРЕДЫ -->
+    <option gravity="0 0 -9.8156" timestep="0.005" integrator="RK4" density="1.2" viscosity="0.000018">
+        <!-- Включаем расширенное моделирование вязкого и сухого трения -->
+        <flag energy="enable" clampctrl="enable"/>
+    </option>
+
+    <!-- Настройка визуализации (сетка пола, освещение) -->
+    <asset>
+        <texture name="grid" type="2d" builtin="checker" rgb1=".1 .2 .3" rgb2=".2 .3 .4" width="100" height="100"/>
+        <material name="grid_mat" texture="grid" texrepeat="10 10"/>
+    </asset>
+
+    <worldbody>
+        <light directional="true" diffuse=".8 .8 .8" specular=".2 .2 .2" pos="0 0 5" dir="0 0 -1"/>
+        <geom name="floor" type="plane" size="5 5 .1" material="grid_mat"/>
+
+        <!-- 2. ТЕЛЕЖКА (CART) -->
+        <!-- Позиционируем направляющий рельс на высоте 1 метр от пола -->
+        <body name="cart" pos="0 0 1.0">
+            <!-- Сама тележка: коробка весом ~1 кг. Движение только по оси X (slide) -->
+            <geom name="cart_geom" type="box" size="0.1 0.06 0.04" rgba="0.2 0.6 0.2 1" mass="1.0"/>
+            
+            <!-- joint slide: задает линейную степень свободы. 
+                 limitоми ограничиваем ход каретки до +-0.8 метра, чтобы модель не улетала бесконечно.
+                 frictionloss="0.5" имитирует сухое трение ремня и роликов о рельс (Кулоновское трение) -->
+            <joint name="slider" type="slide" axis="1 0 0" range="-0.8 0.8" limited="true" 
+                   damping="0.2" frictionloss="0.5"/>
+
+            <!-- 3. ПЕРВОЕ КОЛЕНО МАЯТНИКА (POLE 1) -->
+            <!-- Точка крепления (шарнир) находится в центре тележки -->
+            <body name="pole1" pos="0 0 0">
+                <!-- Капсула (цилиндр со сферическими концами) длиной 0.4 м и массой ~0.2 кг -->
+                <!-- Смещаем геометрию вверх по оси Z на половину длины (0.2 м), чтобы вращение шло вокруг основания -->
+                <geom name="pole1_geom" type="capsule" fromto="0 0 0 0 0 0.4" size="0.015" rgba="0.8 0.2 0.2 1" mass="0.2" fluidshape="ellipsoid"/>
+                
+                <!-- joint hinge: вращение вокруг оси Y (вдоль рельса).
+                     frictionloss="0.02" — микротрение в подшипнике. 
+                     Для Sim2Real это важнейший параметр: если трение будет 0, ИИ обучится "вечному двигателю" -->
+                <joint name="hinge1" type="hinge" axis="0 1 0" damping="0.01" frictionloss="0.02"/>
+
+                <!-- 4. ВТОРОЕ КОЛЕНО МАЯТНИКА (POLE 2) -->
+                <!-- Закреплено на кончике первого колена (pos="0 0 0.4") -->
+                <body name="pole2" pos="0 0 0.4">
+                    <!-- Капсула длиной 0.3 м, чуть легче первого звена (~0.12 кг): поменял, сделал равными -->
+                    <geom name="pole2_geom" type="capsule" fromto="0 0 0 0 0 0.4" size="0.015" rgba="0.2 0.2 0.8 1" mass="0.2" fluidshape="ellipsoid"/>
+                    
+                    <!-- Второй шарнир вращения. Также имеет минимальное трение подшипника -->
+                    <joint name="hinge2" type="hinge" axis="0 1 0" damping="0.005" frictionloss="0.01"/>
+                </body>
+            </body>
+        </body>
+    </worldbody>
+
+    <!-- 5. ПРИВОДЫ И УПРАВЛЕНИЕ (ACTUATORS) -->
+    <actuator>
+        <!-- Мотор привязан к joint "slider" (тележке). 
+             ctrlrange="-15 15" жестко ограничивает максимальную силу мотора в Ньютонах (Actuator Saturation).
+             Это не позволит ИИ развивать бесконечные ускорения, симулируя предел мощности реального движка -->
+        <motor name="cart_motor" joint="slider" gear="1" ctrlrange="-15 15" ctrllimited="true"/>
+    </actuator>
+</mujoco>
