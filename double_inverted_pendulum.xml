@@ -13,48 +13,39 @@
         <material name="grid_mat" texture="grid" texrepeat="10 10"/>
     </asset>
 
-    <worldbody>
-        <light directional="true" diffuse=".8 .8 .8" specular=".2 .2 .2" pos="0 0 5" dir="0 0 -1"/>
-        <geom name="floor" type="plane" size="5 5 .1" material="grid_mat"/>
+<worldbody>
+    <light directional="true" diffuse=".8 .8 .8" specular=".2 .2 .2" pos="0 0 5" dir="0 0 -1"/>
+    <geom name="floor" type="plane" size="5 5 .1" material="grid_mat"/>
 
-        <!-- 2. ТЕЛЕЖКА (CART) -->
-        <!-- Позиционируем направляющий рельс на высоте 1 метра от пола.
-             Длина рельса: range = ±0.25 м (итого 50 см) -->
-        <body name="cart" pos="0 0 1.0">
-            <!-- Сама тележка: коробка весом ~1 кг. Движение только по оси X (slide) -->
-            <geom name="cart_geom" type="box" size="0.1 0.06 0.04" rgba="0.2 0.6 0.2 1" mass="1.0"/>
+    <!-- 2. ТЕЛЕЖКА (CART) -->
+    <!-- Направляющий рельс на высоте 1 м. Ход ±0.25 м (итого 50 см) -->
+    <body name="cart" pos="0 0 1.0">
+        <!-- Поставил contype="0" conaffinity="0", чтобы тележка не цеплялась за маятник и грузик -->
+        <geom name="cart_geom" type="box" size="0.05 0.05 0.04" rgba="0.2 0.6 0.2 1" mass="0.4"
+              contype="0" conaffinity="0"/>
 
-            <!-- joint slide: задает линейную степень свободы.
-                 limitоми ограничиваем ход каретки до ±0.25 метра (50 см рельса),
-                 чтобы модель не улетала бесконечно.
-                 frictionloss="0.5" имитирует сухое трение ремня и роликов о рельс (Кулоновское трение) -->
-            <joint name="slider" type="slide" axis="1 0 0" range="-0.25 0.25" limited="true"
-                   damping="0.2" frictionloss="0.5"/>
+        <joint name="slider" type="slide" axis="1 0 0" range="-0.25 0.25" limited="true"
+               damping="0.2" frictionloss="0.5"/>
 
-            <!-- 3. ПЕРВОЕ КОЛЕНО МАЯТНИКА (POLE 1) -->
-            <!-- Длина колена: 0.2 м (20 см). Точка крепления (шарнир) в центре тележки -->
-            <body name="pole1" pos="0 0 0">
-                <!-- Капсула (цилиндр со сферическими концами) длиной 0.2 м и массой ~0.1 кг -->
-                <!-- θ = 0 → колено смотрит вверх (inverted position), θ = π → вниз -->
-                <geom name="pole1_geom" type="capsule" fromto="0 0 0 0 0 0.2" size="0.015" rgba="0.8 0.2 0.2 1" mass="0.1" fluidshape="ellipsoid"/>
+        <!-- 3. ОДНОКОЛЕННЫЙ МАЯТНИК (POLE) -->
+        <!-- Вынесен по Y на 0.06 м, чтобы свободно вращаться мимо тележки (половина её ширины = 0.05 м) -->
+        <body name="pole" pos="0 0.06 0">
+            <joint name="hinge" type="hinge" axis="0 1 0" damping="0.01" frictionloss="0.02"/>
 
-                <!-- joint hinge: вращение вокруг оси Y (вдоль рельса).
-                     frictionloss="0.02" — микротрение в подшипнике.
-                     Для Sim2Real это важнейший параметр: если трение будет 0, ИИ обучится "вечному двигателю" -->
-                <joint name="hinge1" type="hinge" axis="0 1 0" damping="0.01" frictionloss="0.02"/>
+            <!-- Трубка длиной 0.2 м -->
+            <geom name="pole_geom" type="capsule" fromto="0 0 0 0 0 0.2" size="0.005"
+                  rgba="0.8 0.2 0.2 1" mass="0.1" fluidshape="ellipsoid"
+                  contype="0" conaffinity="0"/>
 
-                <!-- 4. ВТОРОЕ КОЛЕНО МАЯТНИКА (POLE 2) -->
-                <!-- Закреплено на кончике первого колена: тело pole2 находится на высоте 0.2 м -->
-                <body name="pole2" pos="0 0 0.2">
-                    <!-- Капсула длиной 0.2 м, та же масса (~0.1 кг) -->
-                    <geom name="pole2_geom" type="capsule" fromto="0 0 0 0 0 0.2" size="0.015" rgba="0.2 0.2 0.8 1" mass="0.1" fluidshape="ellipsoid"/>
-
-                    <!-- Второй шарнир. Также имеет минимальное трение подшипника -->
-                    <joint name="hinge2" type="hinge" axis="0 1 0" damping="0.005" frictionloss="0.01"/>
-                </body>
-            </body>
+            <!-- Грузик на самом конце трубки (от 36 до 40 см) -->
+            <geom name="weight_geom" type="cylinder" fromto="0 0 0.16 0 0 0.20" size="0.02"
+                  rgba="0.2 0.2 0.8 1" mass="0.05"
+                  contype="0" conaffinity="0"/>
         </body>
-    </worldbody>
+
+    </body>
+</worldbody>
+
 
     <!-- 5. ПРИВОДЫ И УПРАВЛЕНИЕ (ACTUATORS) -->
     <actuator>
