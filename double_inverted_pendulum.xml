@@ -27,7 +27,7 @@
 
             <!-- 3. ОДНО КОЛЕНО (ОДИНОЧНЫЙ МАЯТНИК) -->
             <!-- Тело pole висит от тележки; θ = 0 → колено смотрит вверх, θ = π → вниз. -->
-            <body name="pole" pos="0 0 0">
+            <body name="pole" pos="0 0.075 0">
                 <!-- Род (20 см), масса ~0.1 кг -->
                 <geom name="pole_geom" type="capsule" fromto="0 0 0 0 0 0.2" size="0.015" rgba="0.2 0.8 0.2 1" mass="0.1"/>
                 <joint name="hinge1" type="hinge" axis="0 1 0" damping="0.01" frictionloss="0.02"/>
