@@ -5,6 +5,7 @@ from stable_baselines3 import PPO
 from sim2real import Real2SimPendulumEnv
 
 
+
 def main():
     # Создаем среду с явным указанием human-режима
     env = Real2SimPendulumEnv(render_mode="human")
